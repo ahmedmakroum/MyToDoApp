@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/database_service.dart';
 
 class MonthlyPage extends StatelessWidget {
   final List<String> months = [
@@ -56,14 +57,42 @@ class MonthlyBoard extends StatefulWidget {
 }
 
 class _MonthlyBoardState extends State<MonthlyBoard> {
-  List<String> visions = [];
+  List<Map<String, dynamic>> visions = []; // Store visions from the database
   TextEditingController _controller = TextEditingController();
 
-  void _addVision() {
-    setState(() {
-      visions.add(_controller.text);
-      _controller.clear();
+  @override
+  void initState() {
+    super.initState();
+    _loadVisions(); // Load visions from the database when the screen initializes
+  }
+
+Future<void> _loadVisions() async {
+  final db = DatabaseService();
+  final data = await db.getVisionsByPeriod(widget.monthName, 'monthly');
+  setState(() {
+    visions = data;
+  });
+}
+
+  Future<void> _addVision() async {
+  if (_controller.text.isNotEmpty) {
+    final db = DatabaseService();
+    await db.addVision({
+      'title': _controller.text,
+      'description': null,
+      'type': 'monthly',
+      'period': widget.monthName,
+      'isAchieved': 0,
     });
+    _controller.clear();
+    _loadVisions(); // Reload visions after adding a new one
+  }
+}
+
+  Future<void> _toggleAchieved(int id, bool isAchieved) async {
+    final db = DatabaseService();
+    await db.updateVision(id, {'isAchieved': isAchieved ? 1 : 0});
+    _loadVisions(); // Reload visions after updating
   }
 
   @override
@@ -98,11 +127,12 @@ class _MonthlyBoardState extends State<MonthlyBoard> {
             child: ListView.builder(
               itemCount: visions.length,
               itemBuilder: (context, index) {
+                final vision = visions[index];
                 return CheckboxListTile(
-                  title: Text(visions[index]),
-                  value: false, // Replace this with a boolean list later if needed
+                  title: Text(vision['title']),
+                  value: vision['isAchieved'] == 1,
                   onChanged: (value) {
-                    // Future functionality for checking items
+                    _toggleAchieved(vision['id'], value ?? false);
                   },
                 );
               },

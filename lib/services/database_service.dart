@@ -1,16 +1,15 @@
-import 'dart:async';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
 
-  DatabaseService._internal();
-
   factory DatabaseService() {
     return _instance;
   }
+
+  DatabaseService._internal();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -19,64 +18,103 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    String path = await getDatabasesPath();
-    return openDatabase(
-      join(path, 'todo_app.db'),
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'to_do_app.db');
+
+    return await openDatabase(
+      path,
       version: 1,
       onCreate: _onCreate,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Create Tasks Table
     await db.execute('''
       CREATE TABLE tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
-        isCompleted INTEGER NOT NULL DEFAULT 0,
+        isCompleted INTEGER DEFAULT 0,
         createdAt TEXT NOT NULL,
         dueDate TEXT
       )
     ''');
+
+    // Create Visions Table
+    await db.execute('''
+      CREATE TABLE visions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL, -- "monthly" or "yearly"
+        period TEXT NOT NULL, -- Month name or year
+        isAchieved INTEGER DEFAULT 0
+      )
+    ''');
   }
 
-  // Add Task
-  Future<int> addTask(String title, String description, String? dueDate) async {
+  // -------------------- TASKS OPERATIONS --------------------
+
+  Future<int> addTask(Map<String, dynamic> task) async {
     final db = await database;
-    return db.insert(
-      'tasks',
-      {
-        'title': title,
-        'description': description,
-        'isCompleted': 0,
-        'createdAt': DateTime.now().toIso8601String(),
-        'dueDate': dueDate,
-      },
-    );
+    return await db.insert('tasks', task);
   }
 
-  // Get All Tasks
   Future<List<Map<String, dynamic>>> getAllTasks() async {
     final db = await database;
-    return db.query('tasks', orderBy: 'createdAt DESC');
+    return await db.query('tasks');
   }
 
-  // Update Task
-  Future<int> updateTask(int id, Map<String, dynamic> updatedFields) async {
+  Future<int> updateTask(int id, Map<String, dynamic> updates) async {
     final db = await database;
-    return db.update(
+    return await db.update(
       'tasks',
-      updatedFields,
+      updates,
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  // Delete Task
   Future<int> deleteTask(int id) async {
     final db = await database;
-    return db.delete(
+    return await db.delete(
       'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // -------------------- VISIONS OPERATIONS --------------------
+
+  Future<int> addVision(Map<String, dynamic> vision) async {
+    final db = await database;
+    return await db.insert('visions', vision);
+  }
+
+  Future<List<Map<String, dynamic>>> getVisionsByPeriod(String period, String type) async {
+    final db = await database;
+    return await db.query(
+      'visions',
+      where: 'period = ? AND type = ?',
+      whereArgs: [period, type],
+    );
+  }
+
+  Future<int> updateVision(int id, Map<String, dynamic> updates) async {
+    final db = await database;
+    return await db.update(
+      'visions',
+      updates,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteVision(int id) async {
+    final db = await database;
+    return await db.delete(
+      'visions',
       where: 'id = ?',
       whereArgs: [id],
     );
