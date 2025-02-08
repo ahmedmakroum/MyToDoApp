@@ -18,7 +18,7 @@
                   // Navigate to Monthly Vision
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => MonthlyPage()),
+                    MaterialPageRoute(builder: (context) => MonthlyPage(monthName: '',)),
                   );
                 },
                 child: Text('Monthly Vision'),

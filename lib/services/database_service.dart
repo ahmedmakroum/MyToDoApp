@@ -1,4 +1,7 @@
+import 'dart:io'; // For platform detection
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Required for desktop
 import 'package:path/path.dart';
 
 class DatabaseService {
@@ -9,7 +12,23 @@ class DatabaseService {
     return _instance;
   }
 
-  DatabaseService._internal();
+Future<void> closeDatabase() async {
+  if (_database != null) {
+    await _database!.close();
+    _database = null; // Reset database instance
+    print("Database closed successfully.");
+  }
+}
+
+
+
+  DatabaseService._internal() {
+    // Initialize sqflite_common_ffi for desktop platforms
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      sqfliteFfiInit(); // Initialize FFI
+      databaseFactory = databaseFactoryFfi; // Set factory for desktop
+    }
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -120,3 +139,5 @@ class DatabaseService {
     );
   }
 }
+
+

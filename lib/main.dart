@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'screens/home_page.dart'; // Import the HomePage
+import 'screens/home_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashToHome(), // Start with the splash + welcome + home logic
+      home: SplashToHome(),
     );
   }
 }
@@ -22,20 +21,21 @@ class SplashToHome extends StatefulWidget {
 }
 
 class _SplashToHomeState extends State<SplashToHome> {
-  int currentScreen = 0; // 0: Splash, 1: Welcome, 2: Home
+  Widget currentScreen = SplashScreen();
 
   @override
   void initState() {
     super.initState();
-    // Timer for Splash Screen (3 seconds)
-    Timer(Duration(seconds: 3), () {
+    // Splash Screen (3 seconds)
+    Future.delayed(Duration(seconds: 3), () {
       setState(() {
-        currentScreen = 1; // Move to Welcome Screen
+        currentScreen = WelcomeScreen();
       });
-      // Timer for Welcome Screen (3 seconds)
-      Timer(Duration(seconds: 3), () {
+    }).then((_) {
+      // Welcome Screen (3 seconds)
+      Future.delayed(Duration(seconds: 3), () {
         setState(() {
-          currentScreen = 2; // Move to Home Screen
+          currentScreen = HomePage();
         });
       });
     });
@@ -43,17 +43,11 @@ class _SplashToHomeState extends State<SplashToHome> {
 
   @override
   Widget build(BuildContext context) {
-    if (currentScreen == 0) {
-      return SplashScreen(); // Show Splash Screenx²
-    } else if (currentScreen == 1) {
-      return WelcomeScreen(); // Show Welcome Screen
-    } else {
-      return HomePage(); // Show Home Screen
-    }
+    return currentScreen;
   }
 }
 
-// Splash Screen Widget
+// Splash Screen Widget (unchanged)
 class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -88,7 +82,7 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-// Welcome Screen Widget
+// Welcome Screen Widget (unchanged)
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
